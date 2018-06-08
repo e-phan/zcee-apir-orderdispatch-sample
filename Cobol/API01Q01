@@ -1,0 +1,73 @@
+      * ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      * This file contains the generated language structure(s) for
+      *  request JSON schema 'createDispatch_request.json'.
+      * This structure was generated using 'DFHJS2LS' at mapping level
+      *  '4.1'.
+      *
+      *
+      *      06 ReqBody.
+      *
+      * Comments for field 'itemRefNumber':
+      * This field represents the value of JSON schema keyword
+      *  'ReqBody->itemRefNumber'.
+      * JSON schema type: 'int'.
+      * JSON schema keyword 'maximum' value: '2147483647'.
+      * JSON schema keyword 'minimum' value: '-2147483648'.
+      *        09 itemRefNumber                 PIC S9(9) COMP-5 SYNC.
+      *
+      * Comments for field 'quantityReq':
+      * This field represents the value of JSON schema keyword
+      *  'ReqBody->quantityReq'.
+      * JSON schema type: 'int'.
+      * JSON schema keyword 'maximum' value: '2147483647'.
+      * JSON schema keyword 'minimum' value: '-2147483648'.
+      *        09 quantityReq                   PIC S9(9) COMP-5 SYNC.
+      *
+      * Comments for field 'userid':
+      * This field represents the value of JSON schema keyword
+      *  'ReqBody->userid'.
+      * JSON schema type: 'string'.
+      * This field contains a varying length array of characters or
+      *  binary data.
+      *        09 userid-length                 PIC S9999 COMP-5 SYNC.
+      *        09 userid                        PIC X(255).
+      *
+      * Comments for field 'chargeDept':
+      * This field represents the value of JSON schema keyword
+      *  'ReqBody->chargeDept'.
+      * JSON schema type: 'string'.
+      * This field contains a varying length array of characters or
+      *  binary data.
+      *        09 chargeDept-length             PIC S9999 COMP-5 SYNC.
+      *        09 chargeDept                    PIC X(255).
+      *
+      *
+      * JSON schema keyword 'ReqBody->date' is optional. The number of
+      *  instances present is indicated in field 'Xdate-num'.
+      * There should be at least '0' instance(s).
+      * There should be at most '1' instance(s).
+      *        09 Xdate-num                     PIC S9(9) COMP-5 SYNC.
+      *
+      *
+      * Comments for field 'Xdate':
+      * This field represents the value of JSON schema keyword
+      *  'ReqBody->date'.
+      * JSON schema type: 'string'.
+      * JSON schema keyword 'format' value: 'date-time'.
+      *        09 Xdate                         PIC S9(15) COMP-3.
+      *
+      *
+      * ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+             06 ReqBody.
+               09 itemRefNumber                 PIC S9(9) COMP-5 SYNC.
+               09 quantityReq                   PIC S9(9) COMP-5 SYNC.
+               09 userid-length                 PIC S9999 COMP-5 SYNC.
+               09 userid                        PIC X(255).
+               09 chargeDept-length             PIC S9999 COMP-5 SYNC.
+               09 chargeDept                    PIC X(255).
+
+               09 Xdate-num                     PIC S9(9) COMP-5 SYNC.
+
+               09 Xdate                         PIC S9(15) COMP-3.
+

@@ -1,0 +1,12 @@
+           03 BAQ-APINAME                PIC X(255)
+              VALUE 'Order-Dispatch-API_1.0.0'.
+           03 BAQ-APINAME-LEN            PIC S9(9) COMP-5 SYNC
+              VALUE 24.
+           03 BAQ-APIPATH                PIC X(255)
+              VALUE '/orderDispatch/api/v1/dispatch'.
+           03 BAQ-APIPATH-LEN            PIC S9(9) COMP-5 SYNC
+              VALUE 30.
+           03 BAQ-APIMETHOD              PIC X(255)
+              VALUE 'POST'.
+           03 BAQ-APIMETHOD-LEN          PIC S9(9) COMP-5 SYNC
+              VALUE 4.

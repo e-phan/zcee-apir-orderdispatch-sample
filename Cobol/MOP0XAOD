@@ -1,0 +1,238 @@
+      ******************************************************************
+      *                                                                *
+      * MODULE NAME = MOP0XAOD                                         *
+      *                                                                *
+      * DESCRIPTIVE NAME = CICS TS  (Samples) Example Application -    *
+      *                        Outbound API Requester order Dispatch   *
+      *                                                                *
+      * FUNCTION =                                                     *
+      *      This program is a version of the order dispatcher that    *
+      *      makes an outbound API Request call to an order dispatcher *
+      *                                                                *
+      *----------------------------------------------------------------*
+      *                                                                *
+      * ENTRY POINT = MOP0XAOD                                         *
+      *                                                                *
+      ******************************************************************
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. MOP0XAOD.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+      *----------------------------------------------------------------*
+      * Common defintions                                              *
+      *----------------------------------------------------------------*
+      * Run time (debug) infomation for this invocation
+        01  WS-HEADER.
+           03 WS-EYECATCHER            PIC X(16)
+                                        VALUE 'MOP0XAOD-----API'.
+           03 WS-TRANSID               PIC X(4).
+           03 WS-TERMID                PIC X(4).
+           03 WS-TASKNUM               PIC 9(7).
+           03 WS-CALEN                 PIC S9(4) COMP.
+
+      * Variables for time/date processing
+       01  ABS-TIME                    PIC S9(8) COMP VALUE +0.
+       01  TIME1                       PIC X(8)  VALUE SPACES.
+       01  DATE1                       PIC X(10) VALUE SPACES.
+
+      * Error Message structure
+       01  ERROR-MSG.
+           03 EM-DATE                  PIC X(8)  VALUE SPACES.
+           03 FILLER                   PIC X     VALUE SPACES.
+           03 EM-TIME                  PIC X(6)  VALUE SPACES.
+           03 FILLER                   PIC X(10) VALUE ' MOP0XAOD '.
+           03 EM-ORIGIN                PIC X(8)  VALUE SPACES.
+           03 FILLER                   PIC X     VALUE SPACES.
+           03 EM-CODE                  PIC S9(9) COMP-5 SYNC VALUE 0.
+           03 FILLER                   PIC X     VALUE SPACES.
+           03 EM-DETAIL                PIC X(1024) VALUE SPACES.
+
+      * Copy API Requester required copybook
+       COPY BAQRINFO.
+
+      * Request and Response
+       01 REQUEST.
+           COPY API01Q01.
+       01 RESPONSE.
+           COPY API01P01.
+      * Structure with the API information
+       01 API-INFO-OPER1.
+           COPY API01I01.
+
+      * Request and Response segment, used to store request and
+      * response content.
+       01 BAQ-REQUEST-PTR             USAGE POINTER.
+       01 BAQ-REQUEST-LEN             PIC S9(9) COMP-5 SYNC.
+       01 BAQ-RESPONSE-PTR            USAGE POINTER.
+       01 BAQ-RESPONSE-LEN            PIC S9(9) COMP-5 SYNC.
+       77 COMM-STUB-PGM-NAME          PIC X(8) VALUE 'BAQCSTUB'.
+
+      *----------------------------------------------------------------*
+
+      ******************************************************************
+      *    L I N K A G E   S E C T I O N
+      ******************************************************************
+       LINKAGE SECTION.
+       01 DFHCOMMAREA.
+           COPY DFH0XCP2.
+
+      ******************************************************************
+      *    P R O C E D U R E S
+      ******************************************************************
+       PROCEDURE DIVISION.
+
+      *----------------------------------------------------------------*
+       MAINLINE SECTION.
+
+      *----------------------------------------------------------------*
+      * Common code                                                    *
+      *----------------------------------------------------------------*
+      * initialize working storage variables
+           INITIALIZE WS-HEADER.
+           INITIALIZE REQUEST.
+           INITIALIZE RESPONSE.
+           INITIALIZE BAQ-REQUEST-INFO.
+           INITIALIZE BAQ-RESPONSE-INFO.
+
+      * set up general variable
+           MOVE EIBTRNID TO WS-TRANSID.
+           MOVE EIBTRMID TO WS-TERMID.
+           MOVE EIBTASKN TO WS-TASKNUM.
+
+      *---------------------------------------------------------------*
+      * Check commarea and obtain required details                    *
+      *---------------------------------------------------------------*
+      * If NO commarea received issue an ABEND
+           IF EIBCALEN IS EQUAL TO ZERO
+               MOVE ' NO COMMAREA RECEIVED' TO EM-DETAIL
+               PERFORM WRITE-ERROR-MESSAGE
+               EXEC CICS ABEND ABCODE('EXCA') NODUMP END-EXEC
+           END-IF
+
+      * Initialize commarea return code to zero and reset the response
+           MOVE '00' TO CA-ORD-RETURN-CODE
+           MOVE SPACES TO CA-ORD-RESPONSE-MESSAGE
+
+      *---------------------------------------------------------------*
+      * Set up the data for the API Requester call                    *
+      *---------------------------------------------------------------*
+           MOVE CA-ORD-ITEM-REF-NUMBER TO itemRefNumber IN REQUEST.
+           MOVE CA-ORD-QUANTITY-REQ TO quantityReq IN REQUEST.
+           MOVE CA-ORD-USERID TO userid IN REQUEST.
+           MOVE LENGTH OF CA-ORD-USERID TO userid-length IN REQUEST.
+           MOVE CA-ORD-CHARGE-DEPT TO chargeDept IN REQUEST.
+           MOVE LENGTH OF CA-ORD-CHARGE-DEPT
+            TO chargeDept-length IN REQUEST.
+
+      *---------------------------------------------------------------*
+      * Initialize API Requester PTRs & LENs                          *
+      *---------------------------------------------------------------*
+      * Use pointer and length to specify the location of
+      *  request and response segment.
+      * This procedure is general and necessary.
+           SET BAQ-REQUEST-PTR TO ADDRESS OF REQUEST.
+           MOVE LENGTH OF REQUEST TO BAQ-REQUEST-LEN.
+           SET BAQ-RESPONSE-PTR TO ADDRESS OF RESPONSE.
+           MOVE LENGTH OF RESPONSE TO BAQ-RESPONSE-LEN.
+
+      *---------------------------------------------------------------*
+      * Call the communication stub                                   *
+      *---------------------------------------------------------------*
+      * Call the subsystem-supplied stub code to send
+      * API request to zCEE
+           CALL COMM-STUB-PGM-NAME USING
+                BY REFERENCE   API-INFO-OPER1
+                BY REFERENCE   BAQ-REQUEST-INFO
+                BY REFERENCE   BAQ-REQUEST-PTR
+                BY REFERENCE   BAQ-REQUEST-LEN
+                BY REFERENCE   BAQ-RESPONSE-INFO
+                BY REFERENCE   BAQ-RESPONSE-PTR
+                BY REFERENCE   BAQ-RESPONSE-LEN.
+      * The BAQ-RETURN-CODE field in 'BAQRINFO' indicates whether this
+      * API call is successful.
+
+      * When BAQ-RETURN-CODE is 'BAQ-SUCCESS', response is
+      * successfully returned and fields in RESPONSE copybook
+      * can be obtained.
+           IF BAQ-SUCCESS THEN
+              MOVE responseMessage2(1:79) TO CA-ORD-RESPONSE-MESSAGE
+
+      * Otherwise, some error happened in API, z/OS Connect EE server
+      * or communication stub. 'BAQ-STATUS-CODE' and
+      * 'BAQ-STATUS-MESSAGE' contain the detailed information
+      *  of this error.
+           ELSE
+              MOVE BAQ-STATUS-CODE TO EM-CODE
+              MOVE BAQ-STATUS-MESSAGE TO EM-DETAIL
+              EVALUATE TRUE
+      * When error happens in API,
+      * BAQ-RETURN-CODE is BAQ-ERROR-IN-API.
+      * BAQ-STATUS-CODE is the HTTP response code of API.
+                 WHEN BAQ-ERROR-IN-API
+                   MOVE 'API' TO EM-ORIGIN
+      * When error happens in server,
+      * BAQ-RETURN-CODE is BAQ-ERROR-IN-ZCEE
+      * BAQ-STATUS-CODE is the HTTP response code of zCEE server.
+                 WHEN BAQ-ERROR-IN-ZCEE
+                   MOVE 'ZCEE' TO EM-ORIGIN
+      * When error happens in communication stub,
+      * BAQ-RETURN-CODE is BAQ-ERROR-IN-STUB,
+      * BAQ-STATUS-CODE is the error code of STUB.
+                 WHEN BAQ-ERROR-IN-STUB
+                   MOVE 'STUB' TO EM-ORIGIN
+              END-EVALUATE
+              PERFORM WRITE-MESSAGE-TO-APIRMSG
+           END-IF.
+
+      * Return to caller
+           EXEC CICS RETURN END-EXEC.
+
+       MAINLINE-EXIT.
+           EXIT.
+      *----------------------------------------------------------------*
+
+      *================================================================*
+      * Procedure to write error message to TD QUEUE(CSMT)             *
+      *   message will include Date, Time, Program Name,               *
+      *   and error details.                                           *
+      *================================================================*
+       WRITE-ERROR-MESSAGE.
+      * Obtain and format current time and date
+           EXEC CICS ASKTIME ABSTIME(ABS-TIME)
+           END-EXEC
+           EXEC CICS FORMATTIME ABSTIME(ABS-TIME)
+                     MMDDYYYY(DATE1)
+                     TIME(TIME1)
+           END-EXEC
+           MOVE DATE1 TO EM-DATE
+           MOVE TIME1 TO EM-TIME
+      * Write output message to TDQ
+           EXEC CICS WRITEQ TD QUEUE('CSMT')
+                     FROM(ERROR-MSG)
+                     LENGTH(LENGTH OF ERROR-MSG)
+           END-EXEC.
+           EXIT.
+
+      *================================================================*
+      * Procedure to write error message to TS QUEUE(APIRMSG)          *
+      *   message will include Date, Time, Program Name,               *
+      *   and error details.                                           *
+      *================================================================*
+       WRITE-MESSAGE-TO-APIRMSG.
+      * Obtain and format current time and date
+           EXEC CICS ASKTIME ABSTIME(ABS-TIME)
+           END-EXEC
+           EXEC CICS FORMATTIME ABSTIME(ABS-TIME)
+                     MMDDYYYY(DATE1)
+                     TIME(TIME1)
+           END-EXEC
+           MOVE DATE1 TO EM-DATE
+           MOVE TIME1 TO EM-TIME
+      * Write output message to TSQ
+           EXEC CICS WRITEQ TS QUEUE('APIRMSG')
+                     FROM(ERROR-MSG)
+                     LENGTH(LENGTH OF ERROR-MSG)
+           END-EXEC.
+           EXIT.
